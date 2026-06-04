@@ -22,7 +22,6 @@
     }
   ],
   "env": {
-    "GROQ_API_KEY": "@groq_api_key",
-    "NODE_ENV": "production"
-  }
+  "NODE_ENV": "production"
+}
 }
