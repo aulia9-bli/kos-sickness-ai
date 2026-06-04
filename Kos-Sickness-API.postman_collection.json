@@ -1,0 +1,128 @@
+{
+  "info": {
+    "name": "Kos-Sickness API",
+    "description": "API untuk konsultasi kesehatan mahasiswa kos menggunakan Groq AI",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "api_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{api_url}}/api/health",
+          "host": ["{{api_url}}"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "Get App Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{api_url}}/api/app-info",
+          "host": ["{{api_url}}"],
+          "path": ["api", "app-info"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Sickness - Demam",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"complaint\": \"Saya mengalami sakit kepala, pusing, dan demam tinggi sejak kemarin\"}"
+        },
+        "url": {
+          "raw": "{{api_url}}/api/analyze-sickness",
+          "host": ["{{api_url}}"],
+          "path": ["api", "analyze-sickness"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Sickness - Batuk",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"complaint\": \"Batuk terus-menerus, sulit tidur, dan tubuh terasa pegal sejak 3 hari\"}"
+        },
+        "url": {
+          "raw": "{{api_url}}/api/analyze-sickness",
+          "host": ["{{api_url}}"],
+          "path": ["api", "analyze-sickness"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Sickness - Perut",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"complaint\": \"Perut kembung, mual, dan tidak nafsu makan sejak pagi\"}"
+        },
+        "url": {
+          "raw": "{{api_url}}/api/analyze-sickness",
+          "host": ["{{api_url}}"],
+          "path": ["api", "analyze-sickness"]
+        }
+      }
+    },
+    {
+      "name": "Analyze Sickness - Invalid (Empty)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"complaint\": \"\"}"
+        },
+        "url": {
+          "raw": "{{api_url}}/api/analyze-sickness",
+          "host": ["{{api_url}}"],
+          "path": ["api", "analyze-sickness"]
+        }
+      }
+    }
+  ]
+}
