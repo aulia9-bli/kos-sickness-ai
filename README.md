@@ -1,9 +1,10 @@
 # Kos-Sickness - Konsultasi Kesehatan Mahasiswa Kos
 
-Aplikasi web untuk membantu mahasiswa yang tinggal di kos mendapatkan konsultasi kesehatan untuk gejala sakit ringan menggunakan AI (Groq).
+Aplikasi web untuk membantu mahasiswa yang tinggal di kos mendapatkan konsultasi kesehatan untuk gejala sakit ringan menggunakan AI (Groq). Dibangun dengan **Vercel Serverless Functions** architecture untuk scalability dan cost-efficiency yang optimal.
 
-![Project Structure](https://img.shields.io/badge/Stack-Node.js%20%7C%20React%20%7C%20Tailwind-blue)
+![Project Structure](https://img.shields.io/badge/Stack-Vercel%20Serverless%20%7C%20React%20%7C%20Tailwind-blue)
 ![Version](https://img.shields.io/badge/Version-1.0.0-green)
+![Architecture](https://img.shields.io/badge/Architecture-Serverless-brightgreen)
 
 ## 🎯 Fitur Utama
 
@@ -27,46 +28,46 @@ git clone https://github.com/your-username/kos-sickness.git
 cd kos-sickness
 ```
 
-### 2. Setup Backend
+### 2. Setup Environment Variables
 ```bash
-cd backend
-cp .env.example .env
-# Edit .env dan tambahkan GROQ_API_KEY Anda
-npm install
-npm run dev
+cp .env.example .env.local
+# Edit .env.local dan tambahkan GROQ_API_KEY Anda
 ```
 
-Backend akan berjalan di `http://localhost:5000`
-
-### 3. Setup Frontend (di terminal terpisah)
+### 3. Setup Frontend (Vercel Serverless + React Frontend)
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
 
-Frontend akan berjalan di `http://localhost:3000`
+Frontend + Serverless API akan berjalan di `http://localhost:3000`
+
+**Note**: Untuk development lokal dengan Vercel Functions, gunakan Vercel CLI:
+```bash
+npm install -g vercel
+vercel dev
+```
+
+## 🔄 Architecture Migration
+
+Proyek ini telah direfactor menjadi **Vercel Serverless Functions**:
+- ✅ Backend Express dihapus
+- ✅ Gunakan Vercel Functions di `/api/` directory
+- ✅ No server, auto-scaling, pay-per-use
+
+Lihat [SERVERLESS_ARCHITECTURE.md](SERVERLESS_ARCHITECTURE.md) untuk dokumentasi lengkap.
 
 ## 📁 Struktur Project
 
 ```
 kos-sickness/
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   │   └── groq.js              # Groq client configuration
-│   │   ├── controllers/
-│   │   │   └── sicknessController.js # Business logic
-│   │   ├── middleware/
-│   │   │   └── validators.js         # Input validation
-│   │   ├── routes/
-│   │   │   └── health.js             # API routes
-│   │   └── server.js                # Express server
-│   ├── .env                         # Environment variables
-│   ├── .env.example                 # Environment template
-│   ├── package.json
-│   └── README.md
+├── api/                            # Vercel Serverless Functions
+│   ├── index.js                    # GET / - Root endpoint
+│   ├── health.js                   # GET /api/health - Health check
+│   ├── app-info.js                 # GET /api/app-info - App info
+│   ├── analyze-sickness.js         # POST /api/analyze-sickness - Sickness analysis
+│   └── chat.js                     # POST /api/chat - Chat interface
 │
 ├── frontend/
 │   ├── src/
@@ -75,7 +76,7 @@ kos-sickness/
 │   │   │   ├── SicknessForm.jsx
 │   │   │   └── AdviceResult.jsx
 │   │   ├── services/
-│   │   │   └── apiClient.js         # API client
+│   │   │   └── apiClient.js        # API client untuk serverless
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
@@ -85,17 +86,61 @@ kos-sickness/
 │   ├── package.json
 │   └── README.md
 │
+├── database/                        # Database documentation
+│   ├── kos_sickness_db.sql
+│   └── ...
+│
+├── .env.example                     # Environment variables template
 ├── .gitignore
 ├── vercel.json                      # Vercel deployment config
-├── render.yaml                      # Render deployment config
+├── SERVERLESS_ARCHITECTURE.md       # Serverless documentation
 └── README.md
 ```
 
 ## 🔧 API Endpoints
 
+Semua endpoints adalah **Vercel Serverless Functions** (bukan Express):
+
 ### Health Check
 ```
 GET /api/health
+```
+
+### App Info
+```
+GET /api/app-info
+```
+
+### Analyze Sickness
+```
+POST /api/analyze-sickness
+Content-Type: application/json
+
+{
+  "complaint": "Saya mengalami sakit kepala dan demam"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "complaint": "Saya mengalami sakit kepala dan demam",
+    "advice": "Berdasarkan gejala yang Anda alami...",
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Chat
+```
+POST /api/chat
+Content-Type: application/json
+
+{
+  "complaint": "Demam tinggi"
+}
 ```
 
 Response:
@@ -130,58 +175,63 @@ Response:
 
 ## 🌐 Deployment
 
-### Vercel
+### ⭐ Vercel (Recommended - Serverless Functions)
+
+**Vercel adalah platform terbaik untuk Serverless Functions. Setup sangat mudah!**
 
 1. **Push ke GitHub**
 ```bash
+git add .
+git commit -m "Deploy: Vercel Serverless Architecture"
 git push origin main
 ```
 
 2. **Import Project ke Vercel**
-   - Kunjungi https://vercel.com
+   - Buka https://vercel.com/dashboard
    - Klik "New Project"
-   - Connect GitHub repository
+   - Pilih GitHub repository Anda
+   - Klik "Import"
 
 3. **Setup Environment Variables**
-   - Klik "Settings" → "Environment Variables"
-   - Tambahkan `GROQ_API_KEY`
+   - Buka "Settings" → "Environment Variables"
+   - Tambahkan:
+     - **Key**: `GROQ_API_KEY`
+     - **Value**: API key dari https://console.groq.com
+   - Tambahkan:
+     - **Key**: `CORS_ORIGIN`
+     - **Value**: Frontend URL (auto untuk production)
 
 4. **Deploy**
-   - Vercel akan otomatis deploy ketika ada push
+   - Klik "Deploy"
+   - Vercel akan otomatis deploy!
+   - Vercel Functions siap diakses
 
-### Render
+**URL Anda:**
+- 🌐 Frontend: `https://your-project.vercel.app`
+- 🔗 API: `https://your-project.vercel.app/api/*`
 
-1. **Push ke GitHub**
+**Auto-Deploy**: Push ke `main` branch akan otomatis deploy ke production
 
-2. **Deploy Manual**
+### Local Testing dengan Vercel CLI
+
 ```bash
-vercel login
-vercel deploy
-```
+npm install -g vercel
 
-3. **Setup di Dashboard Render**
-   - Create new Web Service
-   - Connect GitHub repository
-   - Set Build Command:
-     ```
-     cd backend && npm install
-     ```
-   - Set Start Command:
-     ```
-     npm start
-     ```
-   - Add Environment Variables:
-     - `GROQ_API_KEY`: Your Groq API Key
-     - `NODE_ENV`: production
+# Login ke Vercel
+vercel login
+
+# Run locally
+vercel dev
+```
 
 ## 🔐 Environment Variables
 
-### Backend (.env)
+Buat file `.env.local` di root project (atau atur di Vercel Dashboard):
+
 ```
 GROQ_API_KEY=your_groq_api_key_here
-PORT=5000
-NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
+NODE_ENV=development
 ```
 
 ### Frontend (.env)
@@ -192,17 +242,21 @@ VITE_APP_NAME=Kos-Sickness
 
 ## 💻 Tech Stack
 
-### Backend
-- **Express.js**: Web framework
-- **Groq SDK**: AI integration
-- **CORS**: Cross-origin resource sharing
-- **Dotenv**: Environment variables
+### Serverless Functions (Backend)
+- **Vercel Functions**: Serverless compute platform
+- **Node.js 18+**: Runtime environment
+- **Groq SDK**: AI integration (llama-3.1-8b-instant)
+- **No Express**: Function-based handlers only
 
 ### Frontend
 - **React 18**: UI library
 - **Vite**: Build tool
 - **Tailwind CSS**: Styling framework
 - **Axios**: HTTP client
+
+### Infrastructure
+- **Vercel**: Deployment platform (Functions + Static hosting)
+- **GitHub**: Version control & CI/CD trigger
 
 ## 📝 Catatan Development
 

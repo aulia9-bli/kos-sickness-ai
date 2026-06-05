@@ -2,26 +2,27 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/src/server.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "frontend",
       "use": "@vercel/static-build",
       "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/src/server.js"
+      "dest": "/api/$1.js"
     },
     {
       "src": "/(.*)",
-      "dest": "frontend/dist/index.html"
+      "dest": "/frontend/dist/index.html"
     }
   ],
   "env": {
-  "NODE_ENV": "production"
-}
+    "NODE_ENV": "production",
+    "CORS_ORIGIN": "auto"
+  }
 }

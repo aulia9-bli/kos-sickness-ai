@@ -1,14 +1,11 @@
 {
   "name": "kos-sickness",
   "version": "1.0.0",
-  "description": "Aplikasi konsultasi kesehatan untuk mahasiswa kos menggunakan Groq AI",
+  "description": "Aplikasi konsultasi kesehatan untuk mahasiswa kos menggunakan Groq AI - Vercel Serverless Architecture",
   "type": "module",
-  "main": "backend/src/server.js",
   "scripts": {
-    "dev": "echo 'Jalankan backend dan frontend di terminal terpisah' && echo 'Backend: cd backend && npm run dev' && echo 'Frontend: cd frontend && npm run dev'",
-    "backend": "cd backend && npm run dev",
+    "dev": "cd frontend && npm run dev",
     "frontend": "cd frontend && npm run dev",
-    "backend:build": "cd backend && npm run build",
     "frontend:build": "cd frontend && npm run build",
     "test:api": "bash test-api.sh",
     "test:api:win": "test-api.bat"
@@ -22,7 +19,8 @@
     "kos",
     "nodejs",
     "react",
-    "express"
+    "vercel",
+    "serverless"
   ],
   "author": "",
   "license": "ISC",
@@ -33,9 +31,5 @@
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
-  },
-  "workspaces": [
-    "backend",
-    "frontend"
-  ]
+  }
 }
