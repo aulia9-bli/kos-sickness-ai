@@ -1,14 +1,27 @@
 {
   "name": "kos-sickness",
-  "version": "1.0.0",
-  "description": "Aplikasi konsultasi kesehatan untuk mahasiswa kos menggunakan Groq AI - Vercel Serverless Architecture",
+  "version": "2.0.0",
+  "description": "Konsultasi kesehatan AI untuk mahasiswa kos menggunakan Groq AI - Vercel Serverless Architecture",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "cd frontend && npm run dev",
-    "frontend": "cd frontend && npm run dev",
-    "frontend:build": "cd frontend && npm run build",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:api": "vercel dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:prod": "npm run build:frontend && npm run test:api",
+    "start": "vercel dev",
     "test:api": "bash test-api.sh",
-    "test:api:win": "test-api.bat"
+    "test:api:win": "test-api.bat",
+    "lint": "cd frontend && npm run lint",
+    "preview": "cd frontend && npm run preview",
+    "vercel:login": "vercel login",
+    "vercel:link": "vercel link",
+    "vercel:deploy:preview": "vercel",
+    "vercel:deploy:prod": "vercel --prod",
+    "vercel:env": "vercel env list",
+    "vercel:logs": "vercel logs"
   },
   "keywords": [
     "health",
@@ -17,19 +30,27 @@
     "groq",
     "mahasiswa",
     "kos",
-    "nodejs",
     "react",
     "vercel",
     "serverless"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Kos-Sickness Team",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-username/kos-sickness.git"
   },
+  "bugs": {
+    "url": "https://github.com/your-username/kos-sickness/issues"
+  },
   "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=7.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "groq-sdk": "^0.4.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
   }
 }

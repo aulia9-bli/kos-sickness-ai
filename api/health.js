@@ -1,29 +1,33 @@
-// Health check endpoint
-export default function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || 'http://localhost:3000');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+import { withCors, successResponse } from './utils/cors.js';
+import { logRequest, logResponse } from './utils/logger.js';
 
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+/**
+ * Health check endpoint
+ * GET /api/health
+ *
+ * Verifikasi bahwa API berjalan dengan baik
+ */
+const handler = (req, res) => {
+  const startTime = Date.now();
+  const endpoint = 'health';
 
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({
-      success: false,
-      message: `Method ${req.method} tidak diizinkan. Gunakan GET.`,
-      allowedMethods: ['GET'],
-    });
-  }
+  // Log request
+  logRequest(req, endpoint);
 
-  return res.status(200).json({
-    success: true,
+  // Return health status
+  const duration = Date.now() - startTime;
+
+  successResponse(res, {
     message: 'Server berjalan dengan baik ✅',
+    status: 'healthy',
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
   });
-}
+
+  logResponse(200, 'Health check successful', endpoint, duration);
+};
+
+// Wrap handler dengan CORS support hanya untuk GET requests
+export default withCors(handler, ['GET']);
+

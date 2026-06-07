@@ -1,12 +1,88 @@
+# ============================================
+# Dependencies
+# ============================================
 node_modules/
+package-lock.json
+yarn.lock
+
+# ============================================
+# Environment Variables
+# ============================================
 .env
 .env.local
+.env.*.local
 .env.production
-backend/.env
-backend/.env.production
-.DS_Store
+.env.production.local
+
+# ============================================
+# IDE & Editor
+# ============================================
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+.vscode-server/
+
+# ============================================
+# Build Outputs
+# ============================================
 dist/
 build/
+.next/
+out/
+.vercel/
+
+# ============================================
+# Logs & Debugging
+# ============================================
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnp.js
+
+# ============================================
+# Runtime
+# ============================================
+.cache/
+.next/
+dist/
+.vercel
+.vercel_build_output/
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+Thumbs.db
+*.pem
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.bak
+.tmp/
+temp/
+
+# ============================================
+# Test Coverage
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# Legacy Backend (if keeping for reference)
+# ============================================
+backend/.env
+backend/.env.production
+backend/node_modules/
+backend/dist/

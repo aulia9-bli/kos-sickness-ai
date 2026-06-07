@@ -1,190 +1,149 @@
-import { Groq } from 'groq-sdk';
+import { withCors, successResponse, errorResponse } from './utils/cors.js';
+import { getGroqClient, SYSTEM_PROMPTS, handleGroqError, validateGroqResponse } from './utils/groq.js';
+import { logRequest, logResponse, logError } from './utils/logger.js';
 
-// Initialize Groq client
-const getGroqClient = () => {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY tidak ditemukan di environment variables');
-  }
-  return new Groq({ apiKey });
-};
+/**
+ * Chat Endpoint
+ * POST /api/chat
+ *
+ * Multi-turn conversation dengan AI assistant untuk konsultasi kesehatan
+ * Body: { message: string, conversationId?: string, history?: Array }
+ */
+const handler = async (req, res) => {
+  const startTime = Date.now();
+  const endpoint = 'chat';
 
-// Validation function
-const validateComplaint = (complaint) => {
-  if (complaint === undefined) {
-    return {
-      valid: false,
-      message: 'Field "complaint" diperlukan dalam request body',
-      requiredFields: ['complaint'],
-      status: 400,
-    };
-  }
-
-  if (typeof complaint !== 'string') {
-    return {
-      valid: false,
-      message: 'Field "complaint" harus berupa string',
-      receivedType: typeof complaint,
-      status: 400,
-    };
-  }
-
-  const trimmedComplaint = complaint.trim();
-  
-  if (trimmedComplaint.length === 0) {
-    return {
-      valid: false,
-      message: 'Keluhan tidak boleh kosong atau hanya berisi spasi',
-      status: 400,
-    };
-  }
-
-  if (trimmedComplaint.length < 5) {
-    return {
-      valid: false,
-      message: `Keluhan terlalu pendek. Minimal 5 karakter (${trimmedComplaint.length} karakter)`,
-      minimumLength: 5,
-      currentLength: trimmedComplaint.length,
-      status: 400,
-    };
-  }
-
-  if (trimmedComplaint.length > 2000) {
-    return {
-      valid: false,
-      message: `Keluhan terlalu panjang. Maksimal 2000 karakter (${trimmedComplaint.length} karakter)`,
-      maximumLength: 2000,
-      currentLength: trimmedComplaint.length,
-      status: 400,
-    };
-  }
-
-  return { valid: true };
-};
-
-// Default Vercel handler
-export default async function handler(req, res) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      message: `Method ${req.method} tidak diizinkan. Gunakan POST.`,
-      allowedMethods: ['POST'],
-    });
-  }
-
-  const { complaint } = req.body;
+  // Log incoming request
+  logRequest(req, endpoint);
 
   try {
-    // Validate input
-    const validation = validateComplaint(complaint);
-    if (!validation.valid) {
-      return res.status(validation.status).json({
-        success: false,
-        message: validation.message,
-        ...(validation.requiredFields && { requiredFields: validation.requiredFields }),
-        ...(validation.receivedType && { receivedType: validation.receivedType }),
-        ...(validation.minimumLength && { minimumLength: validation.minimumLength }),
-        ...(validation.maximumLength && { maximumLength: validation.maximumLength }),
-        ...(validation.currentLength && { currentLength: validation.currentLength }),
-      });
+    const { message, conversationId, history } = req.body || {};
+
+    // Validate message field
+    if (!message) {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 400, 'Field "message" diperlukan dalam request body');
+      logResponse(400, 'Missing message field', endpoint, duration);
+      return;
     }
 
-    // Get Groq client
-    const groqClient = getGroqClient();
+    if (typeof message !== 'string') {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 400, 'Field "message" harus berupa string');
+      logResponse(400, 'Invalid message type', endpoint, duration);
+      return;
+    }
 
-    const systemPrompt = `Anda adalah konsultan kesehatan profesional yang berpengalaman dalam memberikan saran pertolongan pertama untuk mahasiswa yang tinggal di kos.
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.length === 0) {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 400, 'Pesan tidak boleh kosong atau hanya berisi spasi');
+      logResponse(400, 'Empty message', endpoint, duration);
+      return;
+    }
 
-PETUNJUK PENTING:
-1. Berikan saran dalam Bahasa Indonesia yang jelas, mudah dipahami, dan praktis
-2. Fokus pada pertolongan pertama yang DAPAT dilakukan di rumah/kos dengan sumber daya terbatas
-3. Berikan informasi spesifik tentang KAPAN HARUS KE DOKTER atau ke rumah sakit
-4. Hindari diagnosis medis yang kompleks dan berbahaya
-5. Sarankan obat-obatan umum yang tersedia di apotek terdekat
-6. Berikan tips pencegahan dan perawatan untuk masa depan
-7. Pertimbangkan keterbatasan mahasiswa kos: budget terbatas, fasilitas kesehatan terbatas, diet tidak selalu ideal
+    if (trimmedMessage.length > 2000) {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 400, 'Pesan terlalu panjang. Maksimal 2000 karakter');
+      logResponse(400, 'Message too long', endpoint, duration);
+      return;
+    }
 
-FORMAT RESPONS HARUS:
-✓ Penjelasan singkat tentang kemungkinan penyakit (1-2 baris)
-✓ Langkah-langkah pertolongan pertama yang konkret (3-5 poin dengan nomor/bullet)
-✓ Rekomendasi obat atau produk kesehatan dengan estimasi harga
-✓ Tanda-tanda bahaya yang memerlukan penanganan medis URGENT
-✓ Tips pencegahan untuk masa depan
+    // Initialize Groq client
+    let groqClient;
+    try {
+      groqClient = getGroqClient();
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 401, 'GROQ_API_KEY tidak dikonfigurasi. Hubungi administrator.');
+      logError('Groq client initialization failed', error, endpoint);
+      logResponse(401, 'Groq client init error', endpoint, duration);
+      return;
+    }
 
-GAYA PENULISAN:
-- Gunakan bahasa yang hangat dan supportif
-- Jangan menakut-nakuti pasien
-- Berikan solusi praktis dan terjangkau
-- Gunakan emojis untuk membuat lebih menarik (minimal)`;
+    // Prepare messages with conversation history
+    const messages = [];
+
+    // Add previous conversation history jika ada
+    if (history && Array.isArray(history) && history.length > 0) {
+      // Limit history to last 10 messages untuk menghindari token overload
+      const limitedHistory = history.slice(-10);
+      messages.push(...limitedHistory);
+    }
+
+    // Add current message
+    messages.push({
+      role: 'user',
+      content: trimmedMessage,
+    });
 
     // Call Groq API with timeout protection
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 detik timeout
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-    const message = await groqClient.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: `Pasien (mahasiswa kos) melaporkan: "${complaint}"\n\nBerikan saran pertolongan pertama yang SPESIFIK dan PRAKTIS untuk situasi mahasiswa kos, dengan mempertimbangkan keterbatasan budget dan fasilitas.`,
-        },
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature: 0.7,
-      max_tokens: 1500,
-      top_p: 0.9,
+    let response;
+    try {
+      response = await groqClient.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPTS.chatAssistant,
+          },
+          ...messages,
+        ],
+        model: 'mixtral-8x7b-32768',
+        temperature: 0.7,
+        max_tokens: 1024,
+        top_p: 0.9,
+      });
+
+      clearTimeout(timeoutId);
+    } catch (groqError) {
+      clearTimeout(timeoutId);
+      const errorInfo = handleGroqError(groqError);
+      const duration = Date.now() - startTime;
+      errorResponse(res, errorInfo.statusCode, errorInfo.message);
+      logError('Groq API error', groqError, endpoint);
+      logResponse(errorInfo.statusCode, 'Groq API error', endpoint, duration);
+      return;
+    }
+
+    // Validate Groq response
+    const groqValidation = validateGroqResponse(response);
+    if (!groqValidation.valid) {
+      const duration = Date.now() - startTime;
+      errorResponse(res, 502, 'Groq API mengembalikan response yang tidak valid.');
+      logError('Invalid Groq response', new Error(groqValidation.message), endpoint);
+      logResponse(502, 'Invalid Groq response', endpoint, duration);
+      return;
+    }
+
+    const assistantResponse = groqValidation.content;
+    const duration = Date.now() - startTime;
+
+    // Send success response with updated conversation
+    successResponse(res, {
+      conversationId: conversationId || `conv_${Date.now()}`,
+      response: assistantResponse,
+      message: trimmedMessage,
+      model: 'mixtral-8x7b-32768',
+      processingTimeMs: duration,
+      historyLength: messages.length,
     });
 
-    clearTimeout(timeoutId);
-
-    const advice = message.choices[0].message.content;
-
-    console.log(`✅ Success: Analyzed complaint - "${complaint.substring(0, 50)}..."`);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        complaint,
-        advice,
-        timestamp: new Date().toISOString(),
-        model: 'llama-3.1-8b-instant',
-      },
+    logResponse(200, 'Chat response successful', endpoint, duration, {
+      messageLength: trimmedMessage.length,
+      responseLength: assistantResponse.length,
+      historyLength: messages.length,
     });
   } catch (error) {
-    console.error('❌ Error analyzing sickness:', error.message);
-
-    // Handle timeout
-    if (error.name === 'AbortError') {
-      return res.status(408).json({
-        success: false,
-        message: 'Request timeout. Groq API sedang tidak responsif. Silakan coba lagi.',
-      });
-    }
-
-    // Handle API key error
-    if (error.message.includes('API key') || error.message.includes('authentication')) {
-      return res.status(401).json({
-        success: false,
-        message: 'API Key tidak valid. Silakan periksa konfigurasi GROQ_API_KEY di file .env',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-      });
-    }
-
-    // Handle rate limit
-    if (error.message.includes('rate') || error.status === 429) {
-      return res.status(429).json({
-        success: false,
-        message: 'Terlalu banyak request. Silakan tunggu beberapa saat sebelum mencoba lagi.',
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan saat memproses permintaan. Silakan coba lagi.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    const duration = Date.now() - startTime;
+    logError('Unexpected error in chat', error, endpoint);
+    errorResponse(res, 500, 'Terjadi kesalahan saat memproses pesan. Silakan coba lagi.');
+    logResponse(500, 'Unexpected error', endpoint, duration);
   }
-}
+};
+
+// Wrap handler dengan CORS support hanya untuk POST requests
+export default withCors(handler, ['POST']);
+
