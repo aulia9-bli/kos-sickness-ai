@@ -5,10 +5,11 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "postinstall": "cd frontend && npm install",
     "dev": "cd frontend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:api": "vercel dev",
-    "build": "npm run build:frontend",
+    "build": "cd frontend && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "build:prod": "npm run build:frontend && npm run test:api",
     "start": "vercel dev",
